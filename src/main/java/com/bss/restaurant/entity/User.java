@@ -49,6 +49,9 @@ public class User implements UserDetails {
     @NotNull
     private String image;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(name = "spouse_name")
     private String spouseName;
 
@@ -79,6 +82,9 @@ public class User implements UserDetails {
     @Column(name = "nid")
     @NotNull
     private String nid;
+
+    @Column(name = "force_change_password")
+    private boolean forceChangePassword;
 
     @Column(name = "role")
     @Enumerated(EnumType.STRING)

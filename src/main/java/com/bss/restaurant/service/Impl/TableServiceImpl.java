@@ -2,30 +2,38 @@ package com.bss.restaurant.service.Impl;
 
 import com.bss.restaurant.dao.TableRepository;
 import com.bss.restaurant.dto.request.TableRequest;
-import com.bss.restaurant.dto.response.EmployeeShortResponse;
-import com.bss.restaurant.dto.response.PaginationResponse;
-import com.bss.restaurant.dto.response.TableResponse;
-import com.bss.restaurant.dto.response.TableShortResponse;
-import com.bss.restaurant.entity.Employee;
+import com.bss.restaurant.dto.response.*;
+import com.bss.restaurant.entity.EmployeeTable;
 import com.bss.restaurant.entity.FoodTable;
+import com.bss.restaurant.exception.RestaurantBadRequestException;
+import com.bss.restaurant.exception.RestaurantNotFoundException;
+import com.bss.restaurant.service.EmployeeService;
+import com.bss.restaurant.service.EmployeeTableService;
 import com.bss.restaurant.service.TableService;
 import com.bss.restaurant.util.CreatePaginationHelper;
 import com.bss.restaurant.util.ImageUploader;
 import com.bss.restaurant.util.PaginationBuilder;
 import com.bss.restaurant.util.PaginationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
-public class TableServiceImpl implements TableService {
+public class  TableServiceImpl implements TableService {
     @Autowired
     private TableRepository tableRepository;
+
+    @Autowired
+    private EmployeeService employeeService;
+
+    @Autowired
+    @Lazy
+    private EmployeeTableService employeeTableService;
 
     @Autowired
     private ImageUploader imageUploader;
@@ -47,9 +55,20 @@ public class TableServiceImpl implements TableService {
         var pagingTable = tableRepository.findAll(pageRequest);
         var tables = pagingTable.getContent();
         List<TableResponse> data = new ArrayList<>();
-        for(FoodTable table: tables) {
-            var temp = createTableResponse(table);
-            data.add(temp);
+        for(FoodTable table:tables) {
+            List<EmployeeShortResponseForTable> employees = new ArrayList<>();
+            var employeeTables = employeeTableService.getEmployeeTableByTableId(table.getId());
+            for(EmployeeTable employeeTable:employeeTables ) {
+                var employee = employeeService.getEmployee(employeeTable.getEmployeeId());
+                    employees.add(EmployeeShortResponseForTable.builder()
+                                    .employeeTableId(employeeTable.getId())
+                                    .id(employee.getId())
+                                    .name(employee.getUser().getFullName())
+                            .build());
+            }
+            var tableResponse = createTableResponse(table);
+            tableResponse.setEmployees(employees);
+            data.add(tableResponse);
         }
         var paginationHelper = createPaginationHelper.paginationHelperCreating(pagingTable, pageNumber, pageSize);
         return paginationBuilder.createPagination(paginationHelper, data);
@@ -74,58 +93,69 @@ public class TableServiceImpl implements TableService {
     }
 
     @Override
-    public Optional<TableResponse> getTable(long tableId) {
-        var table = tableRepository.findById(tableId).orElse(null);
-        var tableResponse = createTableResponse(table);
-        return Optional.of(tableResponse);
+    public FoodTable getTableById(long tableId) {
+        return tableRepository.findById(tableId).orElseThrow(()->
+                new RestaurantNotFoundException("Table not found.")
+                );
+    }
+
+    @Override
+    public FoodTable getTableByTableNumber(String tableNumber) {
+        return tableRepository.findByTableNumber(tableNumber).orElseThrow(()->
+                new RestaurantNotFoundException("Table doesn't Exist.")
+                );
+    }
+
+    @Override
+    public TableResponse getTable(long tableId) {
+        var table = getTableById(tableId);
+        return createTableResponse(table);
     }
 
     @Override
     public void saveTable(TableRequest table) {
-        var foundTable = tableRepository.findByTableNumber(table.getTableNumber());
+        var foundTable = tableRepository.findByTableNumber(table.getTableNumber()).orElse(null);
         if(foundTable != null) {
-            throw new ResourceAccessException("Table already exist");
+            throw new RestaurantBadRequestException("Table already exist");
         }
-        imageUploader.uploadImage(table.getBase64(), table.getImage(),TABLE);
+        var imageUrl = imageUploader.uploadImage(table.getBase64(), table.getImage(),TABLE);
         var saveTable = createTable(table);
+        saveTable.setImageUrl(imageUrl);
         tableRepository.save(saveTable);
     }
 
     @Override
     public void updateTable(long tableId, TableRequest table) throws IOException {
-        var updateTable = tableRepository.findById(tableId).orElse(null);
+        var updateTable = getTableById(tableId);
+        String imageUrl = null;
         if(updateTable!=null && !table.getImage().equals(updateTable.getImage())) {
             imageUploader.deleteImage(TABLE,updateTable.getImage());
-            imageUploader.uploadImage(table.getBase64(),table.getImage(), TABLE);
+            imageUrl = imageUploader.uploadImage(table.getBase64(),table.getImage(), TABLE);
         }
-        updateTable = createTable(table);
+        updateTable.setTableNumber(table.getTableNumber());
+        updateTable.setNumberOfSeats(table.getNumberOfSeats());
+        if(imageUrl != null) {
+            updateTable.setImage(table.getImage());
+            updateTable.setImageUrl(imageUrl);
+        }
         tableRepository.save(updateTable);
     }
 
     @Override
     public void deleteTable(long tableId) throws IOException {
-        var table = tableRepository.findById(tableId).orElseThrow(()-> new ResourceAccessException("Table Doesn't Exist"));
+        var table = getTableById(tableId);
+        employeeTableService.deleteEmployeeTable(tableId);
         imageUploader.deleteImage(TABLE,table.getImage());
         tableRepository.delete(table);
     }
 
     public TableResponse createTableResponse(FoodTable table) {
-        List<EmployeeShortResponse> tableEmployees = new ArrayList<>();
-        var allEmployees = table.getEmployees();
-        for(Employee employee: allEmployees) {
-            var temp = EmployeeShortResponse.builder()
-                    .id(employee.getId())
-                    .name(employee.getUser().getFirstName()+employee.getUser().getMiddleName()+employee.getUser().getLastName())
-                    .build();
-            tableEmployees.add(temp);
-        }
         return TableResponse.builder()
                 .id(table.getId())
                 .tableNumber(table.getTableNumber())
                 .numberOfSeats(table.getNumberOfSeats())
                 .isOccupied(false)
-                .image(table.getImage())
-                .employees(tableEmployees)
+                .image(table.getImageUrl())
                 .build();
     }
 
@@ -135,7 +165,6 @@ public class TableServiceImpl implements TableService {
                 .numberOfSeats(tableRequest.getNumberOfSeats())
                 .isOccupied(false)
                 .image(tableRequest.getImage())
-                .employees(null)
                 .build();
     }
 }

@@ -2,10 +2,12 @@ package com.bss.restaurant.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
 @Getter
+@Setter
 @Builder
 @ToString
 public class TableResponse {
@@ -14,5 +16,5 @@ public class TableResponse {
     private Integer numberOfSeats;
     private boolean isOccupied;
     private String image;
-    private List<EmployeeShortResponse> employees;
+    private List<EmployeeShortResponseForTable> employees;
 }

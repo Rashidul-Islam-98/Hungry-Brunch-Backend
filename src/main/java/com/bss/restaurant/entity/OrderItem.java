@@ -5,6 +5,8 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,6 +16,7 @@ import lombok.*;
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -31,7 +34,7 @@ public class OrderItem {
     @NotNull
     private Integer totalPrice;
 
-    @OneToOne
-    @JoinColumn(name= "foodId")
+    @ManyToOne
+    @JoinColumn(name= "food_id")
     private Food food;
 }

@@ -37,7 +37,7 @@ public class Order {
     @JoinColumn(name = "table_id")
     private FoodTable table;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "order_item_id")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "order_id", referencedColumnName = "id")
     private List<OrderItem> items;
 }

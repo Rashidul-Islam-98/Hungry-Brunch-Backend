@@ -1,11 +1,10 @@
 package com.bss.restaurant.dto.request;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.LocalDate;
 @Getter
-public class AuthRegisterRequest {
+public class RegisterRequest {
     private String username;
     private String password;
     private String firstName;

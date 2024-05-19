@@ -4,15 +4,15 @@ import com.bss.restaurant.dao.FoodRepository;
 import com.bss.restaurant.dto.request.FoodRequest;
 import com.bss.restaurant.dto.response.*;
 import com.bss.restaurant.entity.Food;
-import com.bss.restaurant.exception.InvalidPageSizeException;
+import com.bss.restaurant.exception.RestaurantBadRequestException;
+import com.bss.restaurant.exception.RestaurantNotFoundException;
 import com.bss.restaurant.service.FoodService;
 import com.bss.restaurant.util.CreatePaginationHelper;
 import com.bss.restaurant.util.ImageUploader;
 import com.bss.restaurant.util.PaginationBuilder;
 import com.bss.restaurant.util.PaginationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 
@@ -41,30 +41,18 @@ public class FoodServiceImpl implements FoodService {
     private static final String FOOD = "food";
 
     @Override
-    public PaginationResponse getFoods(int pageNumber, int pageSize, String sort) {
+    public PaginationResponse getFoods(String query, int pageNumber, int pageSize, String sort) {
         var pageRequest = paginationUtil.createPage(pageNumber, pageSize, sort);
-        var pagingFood = foodRepository.findAll(pageRequest);
+        Page<Food> pagingFood ;
+        if(query == null || query.equals("")) {
+            pagingFood = foodRepository.findAll(pageRequest);
+        } else {
+            System.out.println("searching food.");
+            pagingFood = foodRepository.findByNameContainingIgnoreCase(query, pageRequest);
+        }
         var foods = pagingFood.getContent();
         List<FoodResponse> data = new ArrayList<>();
         for(Food food: foods) {
-            var temp = createFoodResponse(food);
-            data.add(temp);
-        }
-        var paginationHelper = createPaginationHelper.paginationHelperCreating(pagingFood, pageNumber, pageSize);
-        return paginationBuilder.createPagination(paginationHelper, data);
-    }
-
-    public PaginationResponse<FoodResponse> searchFoods(String query, int pageNumber, int pageSize, String sort) {
-        int page = Math.max(0, pageNumber);
-        if(pageSize<1) {
-            throw new InvalidPageSizeException("Page number should be greater than 0");
-        }
-
-        var pageRequest = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Order.asc(sort)));
-        var pagingFood = foodRepository.findByNameContainingIgnoreCase(query, pageRequest);
-        var foods = pagingFood.getContent();
-        List<FoodResponse> data = new ArrayList<>();
-        for (Food food : foods) {
             var temp = createFoodResponse(food);
             data.add(temp);
         }
@@ -101,42 +89,66 @@ public class FoodServiceImpl implements FoodService {
     public void saveFood(FoodRequest food) {
         var foundFood = foodRepository.findByName(food.getName());
         if(foundFood != null) {
-            throw new ResourceAccessException("Food Already exist");
+            throw new RestaurantBadRequestException("Food Already exist");
         }
-        imageUploader.uploadImage(food.getBase64(),food.getImage(), FOOD);
+        var imageUrl = imageUploader.uploadImage(food.getBase64(),food.getImage(), FOOD);
         var saveFood = createFood(food);
+        saveFood.setImageUrl(imageUrl);
         foodRepository.save(saveFood);
     }
 
     @Override
     public void updateFood(long foodId, FoodRequest food) throws IOException {
-        var updateFood = foodRepository.findById(foodId).orElse(null);
+        var updateFood = foodRepository.findById(foodId).orElseThrow(()->
+                new RestaurantNotFoundException("Food not found")
+                );
+        String imageUrl = null;
         if(updateFood != null && !food.getImage().equals(updateFood.getImage())) {
             imageUploader.deleteImage(FOOD, updateFood.getImage());
-            imageUploader.uploadImage(food.getBase64(),food.getImage(), FOOD);
+            imageUrl = imageUploader.uploadImage(food.getBase64(),food.getImage(), FOOD);
         }
-        updateFood = createFood(food);
+        updateFood.setName(food.getName());
+        updateFood.setDescription(food.getDescription());
+        updateFood.setPrice(food.getPrice());
+        updateFood.setDiscountType(food.getDiscountType());
+        updateFood.setDiscount(food.getDiscount());
+        updateFood.setDiscountPrice(food.getDiscountPrice());
+        if(imageUrl != null) {
+            updateFood.setImage(food.getImage());
+            updateFood.setImageUrl(imageUrl);
+        }
         foodRepository.save(updateFood);
     }
 
     @Override
     public void deleteFood(long foodId) throws IOException {
-        var food = foodRepository.findById(foodId).orElseThrow(()-> new ResourceAccessException("Food doesn't Exist"));
+        var food = foodRepository.findById(foodId).orElseThrow(()-> new RestaurantNotFoundException("Food doesn't Exist"));
         imageUploader.deleteImage(FOOD,food.getImage());
         foodRepository.delete(food);
     }
 
     public FoodResponse createFoodResponse(Food food) {
-        String foodType = food.getDiscountType() == 1 ? "Flat": "Percentage";
+        String foodDiscountType;
+        switch (food.getDiscountType()) {
+            case 1:
+                foodDiscountType = "Flat";
+                break;
+            case 2:
+                foodDiscountType = "Percentage";
+                break;
+            default:
+                foodDiscountType = "No Discount";
+                break;
+        }
         return FoodResponse.builder()
                 .id(food.getId())
                 .name(food.getName())
                 .description(food.getDescription())
                 .price(food.getPrice())
-                .discountType(foodType)
+                .discountType(foodDiscountType)
                 .discount(food.getDiscount())
                 .discountPrice(food.getDiscountPrice())
-                .image(food.getImage())
+                .image(food.getImageUrl())
                 .build();
     }
 

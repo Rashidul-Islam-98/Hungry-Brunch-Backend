@@ -1,14 +1,12 @@
 package com.bss.restaurant.service;
 
-import com.bss.restaurant.dto.request.AuthRegisterRequest;
-import com.bss.restaurant.dto.request.AuthRequest;
-import com.bss.restaurant.dto.response.AuthResponse;
+import com.bss.restaurant.dto.request.RegisterRequest;
+import com.bss.restaurant.dto.request.LoginRequest;
+import com.bss.restaurant.dto.response.LoginResponse;
 
 import java.util.UUID;
 
 public interface AuthService {
-    void saveAdmin(AuthRegisterRequest authRegisterRequest);
-    AuthResponse login(AuthRequest authRequest);
-
-    void createUsernameAndPassword(UUID userId, AuthRequest request);
+    void saveUser(RegisterRequest authRegisterRequest);
+    LoginResponse login(LoginRequest authRequest);
 }

@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface FoodService {
-    PaginationResponse<FoodResponse> getFoods(int pageNumber, int pageSize, String sort);
-
-    PaginationResponse<FoodResponse> searchFoods(String query, int pageNumber, int pageSize, String sort);
+    PaginationResponse<FoodResponse> getFoods(String query, int pageNumber, int pageSize, String sort);
     List<FoodShortResponse> getFoodName();
     Optional<FoodResponse> getFood(long foodId);
     void saveFood(FoodRequest food);

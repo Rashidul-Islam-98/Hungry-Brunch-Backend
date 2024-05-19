@@ -31,7 +31,6 @@ public class FoodTable {
     @Column(name = "image")
     private String image;
 
-    @OneToMany
-    @JoinColumn(name = "employee_id")
-    private List<Employee> employees;
+    @Column(name = "image_url")
+    private String imageUrl;
 }

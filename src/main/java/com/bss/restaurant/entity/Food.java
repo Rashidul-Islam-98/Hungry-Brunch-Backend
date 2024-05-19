@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,7 +23,7 @@ public class Food {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 1000)
     private String description;
 
     @Column(name = "price")
@@ -38,4 +40,7 @@ public class Food {
 
     @Column(name = "image")
     private String image;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 }

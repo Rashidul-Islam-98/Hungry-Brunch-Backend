@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -29,17 +28,9 @@ public class SecurityConfig{
     @Autowired
     private AuthenticationProvider authenticationProvider;
 
-    public static  final String[] AUTH_WHITELIST = {
-            "/api/employee/**",
-            "/api/table/**",
-            "/api/food/**",
-            "/api/order/**",
-            "/api/employee-table/**",
-            "/images/**"
-    };
-
     public static final String[] PUBLIC_PERMITTED_URL = {
             "/api/auth/login",
+            "/api/auth/register",
             "/swagger-ui/**",
             "/v3/api-docs",
             "v3/api-docs/swagger-config"
@@ -53,7 +44,6 @@ public class SecurityConfig{
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PERMITTED_URL).permitAll()
-                        .requestMatchers(HttpMethod.GET, AUTH_WHITELIST).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))

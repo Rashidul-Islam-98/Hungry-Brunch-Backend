@@ -1,62 +1,42 @@
 package com.bss.restaurant.util;
 
+import com.bss.restaurant.exception.RestaurantImageDeleteException;
+import com.bss.restaurant.exception.RestaurantImageUploadException;
+import com.cloudinary.Cloudinary;
+import jakarta.xml.bind.DatatypeConverter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.client.ResourceAccessException;
+import com.cloudinary.utils.ObjectUtils;
 
 import java.io.*;
-import java.nio.file.*;
-import java.util.Base64;
+import java.util.Map;
 @Slf4j
 @Component
 public class ImageUploader {
+    @Autowired
+    private Cloudinary cloudinary;
     public String uploadImage(String base64Image,String imageName, String folderName) {
 
-        String[] parts = base64Image.split(",");
-        String base64Data = parts[1];
 
-
-        byte[] decodedBytes = Base64.getDecoder().decode(base64Data);
-
-
-        String directoryPath = "images"+File.separator+folderName;
-
-
-        File directory = new File(directoryPath);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
-
-        String fileName = directoryPath + File.separator + imageName;
         try {
-            FileOutputStream fileOutputStream = new FileOutputStream(fileName);
-            FileCopyUtils.copy(decodedBytes, fileOutputStream);
-            fileOutputStream.close();
+            Map uploadResult = cloudinary.uploader().upload(base64Image,
+                    ObjectUtils.asMap("public_id", "restaurant/"+folderName + "/" + imageName));
+
+            return (String) uploadResult.get("secure_url");
         } catch (IOException e) {
             e.printStackTrace();
-            throw new ResourceAccessException("Can't Upload Image");
+            throw new RestaurantImageUploadException("Image upload failed");
         }
-
-        return "Image Uploaded Successfully";
     }
 
-    public InputStream getImage(String path, String folder, String image) throws FileNotFoundException {
-        String fullPath = path+File.separator+folder+File.separator+image;
-        InputStream inputFile = new FileInputStream(fullPath);
-        return inputFile;
-    }
-
-    public void deleteImage(String folderName, String imageName) throws IOException {
-        Path directoryPath = Paths.get("images",folderName);
-        Path filePath = directoryPath.resolve(imageName);// classPath:
-
+    public void deleteImage(String folderName, String imageName) {
         try {
-            Files.deleteIfExists(filePath);
-            log.info("Image Deleted Successfully");
+            String publicId = "restaurant/" + folderName + "/" + imageName;
+            Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
         } catch (IOException e) {
-            throw new IOException("Can't Delete Image"+e.getMessage());
+            throw new RestaurantImageDeleteException("Can't Delete Image from Cloudinary");
         }
     }
 }

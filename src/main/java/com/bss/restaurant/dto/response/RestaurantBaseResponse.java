@@ -2,10 +2,11 @@ package com.bss.restaurant.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
 @Builder
-public class AuthResponse {
-    private UserResponse user;
-    private String token;
+@ToString
+public class RestaurantBaseResponse {
+    private String message;
 }

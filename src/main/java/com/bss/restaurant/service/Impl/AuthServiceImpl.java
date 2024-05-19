@@ -2,17 +2,21 @@ package com.bss.restaurant.service.Impl;
 
 import com.bss.restaurant.dao.UserRepository;
 import com.bss.restaurant.dto.internal.Role;
-import com.bss.restaurant.dto.request.AuthRegisterRequest;
-import com.bss.restaurant.dto.request.AuthRequest;
-import com.bss.restaurant.dto.response.AuthResponse;
+import com.bss.restaurant.dto.request.RegisterRequest;
+import com.bss.restaurant.dto.request.LoginRequest;
+import com.bss.restaurant.dto.response.LoginResponse;
 import com.bss.restaurant.dto.response.UserResponse;
 import com.bss.restaurant.entity.User;
+import com.bss.restaurant.exception.RestaurantBadRequestException;
+import com.bss.restaurant.exception.RestaurantNotFoundException;
+import com.bss.restaurant.security.UserDetailsImpl;
 import com.bss.restaurant.service.AuthService;
 import com.bss.restaurant.util.ImageUploader;
 import com.bss.restaurant.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,48 +42,34 @@ public class AuthServiceImpl implements AuthService {
     private AuthenticationManager authenticationManager;
 
     @Override
-    public void saveAdmin(AuthRegisterRequest authRegisterRequest) {
+    public void saveUser(RegisterRequest authRegisterRequest) {
         var foundUser = userRepository.findByUsername(authRegisterRequest.getUsername()).orElse(null);
         if (foundUser != null) {
-            throw new ResourceAccessException("User Already Exist");
+            throw new RestaurantBadRequestException("User Already Exist");
         }
-        imageUploader.uploadImage(authRegisterRequest.getBase64(),authRegisterRequest.getImage(), "user");
+        var imageUrl = imageUploader.uploadImage(authRegisterRequest.getBase64(),authRegisterRequest.getImage(), "user");
         var user = createUser(authRegisterRequest);
+        user.setImageUrl(imageUrl);
         userRepository.save(user);
     }
 
     @Override
-    public AuthResponse login(AuthRequest authRequest) {
-        authenticationManager.authenticate(
+    public LoginResponse login(LoginRequest authRequest) {
+        var user = userRepository.findByUsername(authRequest.getUsername()).orElseThrow( ()->
+         new RestaurantNotFoundException("Wrong credentials")
+        );
+        var auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
-        var user = userRepository.findByUsername(authRequest.getUsername()).orElseThrow( ()->
-         new UsernameNotFoundException("Wrong credentials")
-        );
-        String token = this.jwtUtil.generateToken(user);
-        var userResponse = createUserResponse(user);
-        return AuthResponse.builder()
-                .user(userResponse)
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        String token = this.jwtUtil.generateToken(new UserDetailsImpl(user), user.getId());
+        return LoginResponse.builder()
                 .token(token)
+                .forceChangePassword(user.isForceChangePassword())
                 .build();
     }
 
-    @Override
-    public void createUsernameAndPassword(UUID userId, AuthRequest request) {
-        var foundUser = userRepository.findByUsername(request.getUsername()).orElse(null);
-        if (foundUser != null) {
-            throw new ResourceAccessException("Username Already taken");
-        }
-        var updateUser = userRepository.findById(userId).orElse(null);
-        if (updateUser == null) {
-            throw new ResourceAccessException("User Doesn't Exist");
-        }
-        updateUser.setUsername(request.getUsername());
-        updateUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(updateUser);
-    }
-
-    private User createUser(AuthRegisterRequest request) {
+    private User createUser(RegisterRequest request) {
         return User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -94,39 +84,10 @@ public class AuthServiceImpl implements AuthService {
                 .phoneNumber(request.getPhoneNumber())
                 .dob(request.getDob())
                 .genderId(request.getGenderId())
-                .role(Role.ADMIN)
+                .role(Role.CUSTOMER)
                 .nid(request.getNid())
+                .forceChangePassword(false)
                 .provider("Hungry Brunch")
                 .build();
-    }
-
-    private UserResponse createUserResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .middleName(user.getMiddleName())
-                .lastName(user.getLastName())
-                .fullName(user.getFirstName()+" "+user.getLastName())
-                .username(user.getUsername())
-                .spouseName(user.getSpouseName())
-                .fatherName(user.getFatherName())
-                .motherName(user.getMotherName())
-                .email(user.getEmail())
-                .image(user.getImage())
-                .phoneNumber(user.getPhoneNumber())
-                .dob(user.getDob())
-                .gender(getGender(user.getGenderId()))
-                .nid(user.getNid())
-                .build();
-    }
-
-    private String getGender(int genderId) {
-        if(genderId == 0) {
-            return "Male";
-        } else if (genderId == 1) {
-            return "Female";
-        } else {
-            return "Other";
-        }
     }
 }

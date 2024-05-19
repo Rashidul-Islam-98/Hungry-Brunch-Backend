@@ -9,6 +9,8 @@ import com.bss.restaurant.dto.request.OrderRequest;
 import com.bss.restaurant.dto.response.*;
 import com.bss.restaurant.entity.Order;
 import com.bss.restaurant.entity.OrderItem;
+import com.bss.restaurant.exception.RestaurantBadRequestException;
+import com.bss.restaurant.exception.RestaurantNotFoundException;
 import com.bss.restaurant.service.OderService;
 import com.bss.restaurant.util.CreatePaginationHelper;
 import com.bss.restaurant.util.PaginationBuilder;
@@ -103,7 +105,7 @@ public class OrderServiceImpl implements OderService {
     public void saveOrder(OrderRequest order) {
         var foundOrder = orderRepository.findByOrderNumber(order.getOrderNumber());
         if(foundOrder != null) {
-            throw new ResourceAccessException("Order already exist");
+            throw new RestaurantBadRequestException("Order already exist");
         }
         var saveOrder = createOrder(order);
         orderRepository.save(saveOrder);
@@ -111,18 +113,18 @@ public class OrderServiceImpl implements OderService {
 
     @Override
     public void updateOrder(UUID orderId, OrderRequest order) {
-        var updateOrder = orderRepository.findById(orderId).orElse(null);
-        if(updateOrder != null){
-            updateOrder = createOrder(order);
-            orderRepository.save(updateOrder);
-        }
+        var updateOrder = orderRepository.findById(orderId).orElseThrow(()->
+                new RestaurantNotFoundException("Order not found")
+                );
+       updateOrder = createOrder(order);
+       orderRepository.save(updateOrder);
     }
 
     @Override
     public void updateOrderStatus(UUID orderId, Integer status) {
         var order = orderRepository.findById(orderId).orElse(null);
         if(order == null){
-            throw new ResourceAccessException("Order doesn't exist");
+            throw new RestaurantNotFoundException("Order doesn't exist");
         }
         order.setOrderStatus(status);
         orderRepository.save(order);
@@ -143,22 +145,22 @@ public class OrderServiceImpl implements OderService {
         }
         String status;
         switch (order.getOrderStatus()){
-            case 0:
+            case 1:
                 status = "Pending";
                 break;
-            case 1:
+            case 2:
                 status = "Confirmed";
                 break;
-            case 2:
+            case 3:
                 status = "Preparing";
                 break;
-            case 3:
+            case 4:
                 status = "PreparedToServed";
                 break;
-            case 4:
+            case 5:
                 status = "Served";
                 break;
-            case 5:
+            case 6:
                 status = "Paid";
                 break;
             default:

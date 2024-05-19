@@ -4,10 +4,10 @@ import com.bss.restaurant.dao.EmployeeRepository;
 import com.bss.restaurant.dao.EmployeeTableRepository;
 import com.bss.restaurant.dao.TableRepository;
 import com.bss.restaurant.dto.internal.PaginationHelper;
+import com.bss.restaurant.dto.request.EmployeeTableRequest;
 import com.bss.restaurant.dto.response.*;
 import com.bss.restaurant.entity.EmployeeTable;
-import com.bss.restaurant.exception.InvalidPageSizeException;
-import com.bss.restaurant.exception.NotFoundException;
+import com.bss.restaurant.exception.RestaurantNotFoundException;
 import com.bss.restaurant.service.EmployeeService;
 import com.bss.restaurant.service.EmployeeTableService;
 import com.bss.restaurant.service.TableService;
@@ -15,12 +15,10 @@ import com.bss.restaurant.util.CreatePaginationHelper;
 import com.bss.restaurant.util.PaginationBuilder;
 import com.bss.restaurant.util.PaginationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class EmployeeTableServiceImpl implements EmployeeTableService {
@@ -63,69 +61,55 @@ public class EmployeeTableServiceImpl implements EmployeeTableService {
     }
 
     @Override
-    public List<EmployeeTableResponse> getOnlyEmployeesInTable() {
+    public RestaurantListResponse<EmployeeTableResponse> getOnlyEmployeesInTable() {
         var employeeTables = employeeTableRepository.findAll();
         List<EmployeeTableResponse> data = new ArrayList<>();
         for(EmployeeTable employeeTable: employeeTables) {
             var temp = createEmployeeTableResponse(employeeTable);
             data.add(temp);
         }
-        return data;
+        return RestaurantListResponse.<EmployeeTableResponse>builder().data(data).build();
     }
 
     @Override
-    public Optional<EmployeeTableResponse> getEmployeeTable(long id) {
-        var employeeTable = employeeTableRepository.findById(id).orElse(null);
-        var employeeTableResponse = createEmployeeTableResponse(employeeTable);
-        return Optional.of(employeeTableResponse);
+    public EmployeeTable getEmployeeTableById(long employeeTableId) {
+        return employeeTableRepository.findById(employeeTableId).orElseThrow(()->
+                new RestaurantNotFoundException("Employee doesn't belongs to this table")
+        );
     }
 
     @Override
-    public void saveEmployeeTable(EmployeeTable employeeTable) {
-        try {
-            var table = tableRepository.findById(employeeTable.getTableId()).orElse(null);
-            var employee = employeeRepository.findById(employeeTable.getEmployeeId()).orElse(null);
-            var employees = table.getEmployees();
-            employees.add(employee);
-            table.setEmployees(employees);
-            tableRepository.save(table);
-            employeeTableRepository.save(employeeTable);
-        }catch (NullPointerException e){
-            throw new NotFoundException(e.getMessage());
-        }
+    public EmployeeTableResponse getEmployeeTable(long id) {
+        var employeeTable = getEmployeeTableById(id);
+        return createEmployeeTableResponse(employeeTable);
     }
 
     @Override
-    public void updateEmployeeTable(long id, EmployeeTable employeeTable) {
-        try {
-            var updateEmployeeTable = employeeTableRepository.findById(id).orElse(null);
-            updateEmployeeTable.setEmployeeId(employeeTable.getEmployeeId());
-            updateEmployeeTable.setTableId(employeeTable.getId());
-            saveEmployeeTable(updateEmployeeTable);
-        }catch (NullPointerException e){
-            throw new NotFoundException(e.getMessage());
-        }
+    public void saveEmployeeTable(EmployeeTableRequest employeeTableRequest) {
+        var employeeTable = createEmployeeTable(employeeTableRequest);
+        employeeTableRepository.save(employeeTable);
+    }
+
+    @Override
+    public void updateEmployeeTable(long id, EmployeeTableRequest employeeTableRequest) {
+        var updateEmployeeTable = getEmployeeTableById(id);
+        updateEmployeeTable.setEmployeeId(employeeTableRequest.getEmployeeId());
+        updateEmployeeTable.setTableId(employeeTableRequest.getTableId());
+        employeeTableRepository.save(updateEmployeeTable);
     }
 
     @Override
     public void deleteEmployeeTable(long id) {
-        try {
-            var deleteEmployeeTable = employeeTableRepository.findById(id).orElse(null);
-            var table = tableRepository.findById(deleteEmployeeTable.getTableId()).orElse(null);
-            var employee = employeeRepository.findById(deleteEmployeeTable.getEmployeeId()).orElse(null);
-            var employees = table.getEmployees();
-            employees.remove(employee);
-            table.setEmployees(employees);
-            tableRepository.save(table);
-            employeeTableRepository.deleteById(id);
-        }catch (NullPointerException e){
-            throw new NotFoundException(e.getMessage());
-        }
+        employeeTableRepository.deleteById(id);
+    }
+
+    public List<EmployeeTable> getEmployeeTableByTableId(long tableId) {
+        return employeeTableRepository.findAllByTableId(tableId);
     }
 
     protected EmployeeTableResponse createEmployeeTableResponse(EmployeeTable employeeTable) {
-        var employeeResponse = employeeService.getEmployee(employeeTable.getEmployeeId()).orElse(null);
-        var tableResponse = tableService.getTable(employeeTable.getTableId()).orElse(null);
+        var employeeResponse = employeeService.getEmployee(employeeTable.getEmployeeId());
+        var tableResponse = tableService.getTable(employeeTable.getTableId());
         var employee = EmployeeShortResponse.builder()
                 .id(employeeResponse.getId())
                 .name(employeeResponse.getUser().getFirstName()+employeeResponse.getUser().getMiddleName()+employeeResponse.getUser().getLastName())
@@ -138,6 +122,13 @@ public class EmployeeTableServiceImpl implements EmployeeTableService {
                 .id(employeeTable.getId())
                 .employee(employee)
                 .table(table)
+                .build();
+    }
+
+    private EmployeeTable createEmployeeTable(EmployeeTableRequest employeeTableRequest) {
+        return EmployeeTable.builder()
+                .employeeId(employeeTableRequest.getEmployeeId())
+                .tableId(employeeTableRequest.getTableId())
                 .build();
     }
 }
