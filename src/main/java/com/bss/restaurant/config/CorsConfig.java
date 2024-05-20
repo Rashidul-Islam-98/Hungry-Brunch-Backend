@@ -14,7 +14,7 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedMethods("HEAD", "GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS")
-                        .allowedOrigins("http://localhost:4200", "https://www.getpostman.com", "https://editor.swagger.io")
+                        .allowedOrigins("https://hungry-brunch-frontend.vercel.app","http://localhost:4200", "https://www.getpostman.com", "https://editor.swagger.io")
                         .allowedHeaders("*");
             }
         };

@@ -204,7 +204,7 @@ public class OrderServiceImpl implements OderService {
         return Order.builder()
                 .orderNumber(orderRequest.getOrderNumber())
                 .amount(orderRequest.getAmount())
-                .orderStatus(0)
+                .orderStatus(1)
                 .table(table)
                 .items(orderItems)
                 .build();
