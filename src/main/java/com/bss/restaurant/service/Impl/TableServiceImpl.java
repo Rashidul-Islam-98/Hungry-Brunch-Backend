@@ -7,6 +7,7 @@ import com.bss.restaurant.entity.EmployeeTable;
 import com.bss.restaurant.entity.FoodTable;
 import com.bss.restaurant.exception.RestaurantBadRequestException;
 import com.bss.restaurant.exception.RestaurantNotFoundException;
+import com.bss.restaurant.projection.TableNumberAndIdProjection;
 import com.bss.restaurant.service.EmployeeService;
 import com.bss.restaurant.service.EmployeeTableService;
 import com.bss.restaurant.service.TableService;
@@ -78,13 +79,11 @@ public class  TableServiceImpl implements TableService {
     public List<TableShortResponse> getTableNumbers() {
         var results = tableRepository.findAllTableNumberAndIds();
         List<TableShortResponse> tableShortResponses = new ArrayList<>();
-        for (Object[] result : results) {
-            Long id = (Long) result[0];
-            String tableNumber = (String) result[1];
+        for (TableNumberAndIdProjection result : results) {
 
             var tableShortResponse = TableShortResponse.builder()
-                    .id(id)
-                    .tableNumber(tableNumber)
+                    .id(result.getId())
+                    .tableNumber(result.getTableNumber())
                     .build();
 
             tableShortResponses.add(tableShortResponse);

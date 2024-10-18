@@ -11,6 +11,7 @@ import com.bss.restaurant.entity.Order;
 import com.bss.restaurant.entity.OrderItem;
 import com.bss.restaurant.exception.RestaurantBadRequestException;
 import com.bss.restaurant.exception.RestaurantNotFoundException;
+import com.bss.restaurant.projection.OrderNumberAndIdProjection;
 import com.bss.restaurant.service.OderService;
 import com.bss.restaurant.util.CreatePaginationHelper;
 import com.bss.restaurant.util.PaginationBuilder;
@@ -80,13 +81,11 @@ public class OrderServiceImpl implements OderService {
     public List<OrderShortResponse> getOrderNumbers() {
         var results = orderRepository.findAllOrderNumberAndIds();
         List<OrderShortResponse> orderShortResponses = new ArrayList<>();
-        for (Object[] result : results) {
-            UUID id = (UUID) result[0];
-            String orderNumber = (String) result[1];
+        for (OrderNumberAndIdProjection result : results) {
 
             var orderShortResponse = OrderShortResponse.builder()
-                    .orderId(id)
-                    .orderNumber(orderNumber)
+                    .orderId(result.getId())
+                    .orderNumber(result.getOrderNumber())
                     .build();
 
             orderShortResponses.add(orderShortResponse);

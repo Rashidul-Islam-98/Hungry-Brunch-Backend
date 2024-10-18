@@ -6,6 +6,7 @@ import com.bss.restaurant.dto.response.*;
 import com.bss.restaurant.entity.Food;
 import com.bss.restaurant.exception.RestaurantBadRequestException;
 import com.bss.restaurant.exception.RestaurantNotFoundException;
+import com.bss.restaurant.projection.FoodNameAndIdProjection;
 import com.bss.restaurant.service.FoodService;
 import com.bss.restaurant.util.CreatePaginationHelper;
 import com.bss.restaurant.util.ImageUploader;
@@ -64,13 +65,11 @@ public class FoodServiceImpl implements FoodService {
     public List<FoodShortResponse> getFoodName() {
         var results = foodRepository.findAllNamesAndIds();
         List<FoodShortResponse> foodShortResponses = new ArrayList<>();
-        for (Object[] result : results) {
-            long id = (long) result[0];
-            String name = (String) result[1];
+        for (FoodNameAndIdProjection result : results) {
 
             var foodShortResponse = FoodShortResponse.builder()
-                    .id(id)
-                    .name(name)
+                    .id(result.getId())
+                    .name(result.getName())
                     .build();
 
             foodShortResponses.add(foodShortResponse);

@@ -1,6 +1,7 @@
 package com.bss.restaurant.dao;
 
 import com.bss.restaurant.entity.Order;
+import com.bss.restaurant.projection.OrderNumberAndIdProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,7 +13,7 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Order findByOrderNumber(String orderNumber);
     @Query(value = "SELECT o.id, o.order_number FROM orders o", nativeQuery = true)
-    List<Object[]> findAllOrderNumberAndIds();
+    List<OrderNumberAndIdProjection> findAllOrderNumberAndIds();
 
     Page<Order> findByOrderStatus(Integer orderStatus, Pageable pageable);
 }
