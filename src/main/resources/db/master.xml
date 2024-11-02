@@ -15,5 +15,6 @@
     <include file="db/changelog/sql/order-items.sql" />
     <!--data-->
     <include file="db/changelog/data/users.sql" />
+    <include file="db/changelog/data/foods.sql" />
 
 </databaseChangeLog>
