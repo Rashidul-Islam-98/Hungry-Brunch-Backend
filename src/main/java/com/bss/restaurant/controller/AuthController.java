@@ -1,11 +1,9 @@
 package com.bss.restaurant.controller;
 
 import com.bss.restaurant.dto.request.LoginRequest;
+import com.bss.restaurant.dto.request.RefreshTokenRequest;
 import com.bss.restaurant.dto.request.RegisterRequest;
-import com.bss.restaurant.dto.response.RestaurantBadRequestErrorResponse;
-import com.bss.restaurant.dto.response.LoginResponse;
-import com.bss.restaurant.dto.response.RestaurantBaseResponse;
-import com.bss.restaurant.dto.response.RestaurantErrorResponse;
+import com.bss.restaurant.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -73,4 +71,29 @@ public interface AuthController {
     )
     @PostMapping("/login")
     ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest);
+
+    @Operation(
+            description = """
+                    Refresh token request with a refreshToken and get a new jwt and refresh token.
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Login successful", content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = RefreshTokenResponse.class))
+                    }),
+                    @ApiResponse(responseCode = "400", description = "Functional errors", content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantBadRequestErrorResponse.class))
+                    }),
+                    @ApiResponse(responseCode = "401", description = "Not authenticated", content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantErrorResponse.class))
+                    }),
+                    @ApiResponse(responseCode = "404", description = "Object not found", content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantErrorResponse.class))
+                    }),
+                    @ApiResponse(responseCode = "500", description = "Technical error", content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantErrorResponse.class))
+                    })
+            }
+    )
+    @PostMapping("/refresh-token")
+    ResponseEntity<RefreshTokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request);
 }

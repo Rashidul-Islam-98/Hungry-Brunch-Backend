@@ -13,6 +13,7 @@
     <include file="db/changelog/sql/food-table.sql" />
     <include file="db/changelog/sql/orders.sql" />
     <include file="db/changelog/sql/order-items.sql" />
+    <include file="db/changelog/sql/refresh-tokens.sql" />
     <!--data-->
     <include file="db/changelog/data/users.sql" />
     <include file="db/changelog/data/foods.sql" />

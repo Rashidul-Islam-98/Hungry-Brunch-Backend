@@ -31,6 +31,7 @@ public class SecurityConfig{
     public static final String[] PUBLIC_PERMITTED_URL = {
             "/api/auth/login",
             "/api/auth/register",
+            "/api/auth/refresh-token",
             "/swagger-ui/**",
             "/v3/api-docs",
             "v3/api-docs/swagger-config"

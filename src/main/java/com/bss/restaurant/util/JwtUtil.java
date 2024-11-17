@@ -19,7 +19,7 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class JwtUtil {
-    public static final long JWT_TOKEN_VALIDITY = 24 * 60 * 60L;
+    public static final long JWT_TOKEN_VALIDITY = 1 * 60 * 60L;
 
     private String secret = "yDdcFApzjC9+sezBGqCu8zQQXlOTgu6bgxsNB2w3SiXLnIBNjYYYWZbZ9344WWUcigeE/IxwdvZb4ta3Jbe01CUp9F24FRIIjwWcyAA2xfdwi3qo7aCpcjlJaR44lwhu5C3k/vfp2RLfaeLVdk4HtILo1GEMU6QF1V0wN5PWEEKu6mOBQfiUnsgzIJv9L/gZH4Lg3zMrzlTYXxzd07ZKyJS6LbVspYFqX3O9iw4Y0gGEAZ4XGuAtpaFmokIEs+nBaxdMStkONmqeaUG/mnWoFSLwwtnlj14B222+2s4aOll0DISik/OvL6uJa07BeS6P1/cFnyREKA6C+rnFDUzjXQWSTsyxTgIegpU59Kr6Ve4HXj/t1YODKOxnQxC4xf65llASLSDBI0c8LXMtRrk6MYXQ8DaEOUNipC0rIxtn4L17Be83ROS1NijVtRRkgds3izfRduckOUOjl6YSMcvCRE3MWleLRlmJkrdClthc+9geL7/YmSlf1r+xU5U71pC5khsPlq3omgNgxIM6h45RFr16hLmkVsbYoRpePuNpQH3sWdetmtWDxBohmW1MTfXbbNiW5VIYGmkji9t/mEjWS/GeQXOCmtM4cK/i/qcUAsSpO4yHgstUYHWhDBJt3Dy+ijWQnJpscwXmIkeGYARFZOpBpBgK84AANkl7ZwnuFlBkxdHGOBVjJczyVkVldw6Y";
     byte[] secretKeyBytes = secret.getBytes(StandardCharsets.UTF_8);

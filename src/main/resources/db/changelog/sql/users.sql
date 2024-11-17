@@ -23,3 +23,13 @@ CREATE TABLE IF NOT EXISTS users (
     provider VARCHAR(50),
     CONSTRAINT pk_users PRIMARY KEY (id)
 );
+
+--changeset rashidul:2
+ALTER TABLE users
+ADD COLUMN refresh_token_id BIGINT;
+
+--changeset rashidul:3
+ALTER TABLE users
+ADD CONSTRAINT fk_users_refresh_token
+FOREIGN KEY (refresh_token_id) REFERENCES refresh_tokens(id)
+ON DELETE SET NULL;

@@ -1,6 +1,7 @@
 package com.bss.restaurant.entity;
 
 import com.bss.restaurant.dto.internal.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -92,6 +93,10 @@ public class User implements UserDetails {
 
     @Column(name = "provider")
     private String provider;
+
+    @OneToOne(mappedBy = "user")
+    @JsonIgnore
+    private RefreshToken refreshToken;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

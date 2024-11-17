@@ -1,12 +1,13 @@
 package com.bss.restaurant.dto.response;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class LoginResponse {
+public class RefreshTokenResponse {
     private String accessToken;
     private String refreshToken;
-    private boolean forceChangePassword;
 }

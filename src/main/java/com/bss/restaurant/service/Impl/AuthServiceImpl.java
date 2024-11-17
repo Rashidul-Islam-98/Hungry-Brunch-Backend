@@ -6,11 +6,13 @@ import com.bss.restaurant.dto.request.RegisterRequest;
 import com.bss.restaurant.dto.request.LoginRequest;
 import com.bss.restaurant.dto.response.LoginResponse;
 import com.bss.restaurant.dto.response.UserResponse;
+import com.bss.restaurant.entity.RefreshToken;
 import com.bss.restaurant.entity.User;
 import com.bss.restaurant.exception.RestaurantBadRequestException;
 import com.bss.restaurant.exception.RestaurantNotFoundException;
 import com.bss.restaurant.security.UserDetailsImpl;
 import com.bss.restaurant.service.AuthService;
+import com.bss.restaurant.service.RefreshTokenService;
 import com.bss.restaurant.util.ImageUploader;
 import com.bss.restaurant.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -63,8 +68,13 @@ public class AuthServiceImpl implements AuthService {
         );
         SecurityContextHolder.getContext().setAuthentication(auth);
         String token = this.jwtUtil.generateToken(new UserDetailsImpl(user), user.getId());
+        String refreshToken = null;
+        if(authRequest.isRememberMe()){
+            refreshToken = refreshTokenService.createRefreshToken(user.getUsername());
+        }
         return LoginResponse.builder()
-                .token(token)
+                .accessToken(token)
+                .refreshToken(refreshToken)
                 .forceChangePassword(user.isForceChangePassword())
                 .build();
     }
