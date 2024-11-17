@@ -6,6 +6,7 @@
       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
     
     <include file="db/changelog/sql/uuid-ossp.sql" />
+    <include file="db/changelog/sql/refresh-tokens.sql" />
     <include file="db/changelog/sql/users.sql" />
     <include file="db/changelog/sql/employees.sql" />
     <include file="db/changelog/sql/employee-table.sql" />
@@ -13,7 +14,6 @@
     <include file="db/changelog/sql/food-table.sql" />
     <include file="db/changelog/sql/orders.sql" />
     <include file="db/changelog/sql/order-items.sql" />
-    <include file="db/changelog/sql/refresh-tokens.sql" />
     <!--data-->
     <include file="db/changelog/data/users.sql" />
     <include file="db/changelog/data/foods.sql" />
